@@ -11,12 +11,32 @@ class MenuPage extends StatefulWidget {
 }
 
 class _MenuPageState extends State<MenuPage> {
-  final List<Salad> salads = [
-    Salad(name: 'Greek Salad', price: 8.99, image: 'assets/greek_salad.jpg'),
-    Salad(name: 'Caesar Salad', price: 7.99, image: 'assets/caesar_salad.jpg'),
-    Salad(name: 'Custom', price: 9.99, image: 'assets/custom.jpg', isCustom: true),
-    // Add other salad items
-  ];
+  List<Salad> salads = [];
+
+  Future<void> fetchMenus() async {
+    final response = await http.get(Uri.parse(
+        'http://localhost:3000/menu')); // Replace with your actual API endpoint
+    if (response.statusCode == 200) {
+      final List menus = jsonDecode(response.body);
+      setState(() {
+        salads = menus.map((menu) =>
+            Salad(
+              name: menu['name'],
+              price: double.tryParse(menu['price'].toString()) ?? 0.0,
+              image: menu['imagePath'],
+              isCustom: menu['name'] == 'custom', // Add this line
+            )).toList();
+      });
+    } else {
+      print('Failed to load menus');
+    }
+  }
+
+    @override
+  void initState() {
+    super.initState();
+    fetchMenus();
+  }
 
   Future<void> sendOrder() async {
     final items = salads.map((salad) => {
@@ -63,7 +83,7 @@ class _MenuPageState extends State<MenuPage> {
             return CustomSaladItem(salad: salads[index]);
           } else {
             return ListTile(
-              leading: Image.asset(salads[index].image),
+              leading: Image.network(salads[index].image),
               title: Text(salads[index].name),
               subtitle: Text('\$${salads[index].price.toStringAsFixed(2)}'),
               trailing: Container(
