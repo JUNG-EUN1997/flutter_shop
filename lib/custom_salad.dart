@@ -11,6 +11,7 @@ class CustomSaladItem extends StatefulWidget {
   @override
   _CustomSaladItemState createState() => _CustomSaladItemState();
 }
+
 class _CustomSaladItemState extends State<CustomSaladItem> {
   List<String> selectedIngredients = [];
 
