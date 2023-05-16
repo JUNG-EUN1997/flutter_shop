@@ -4,6 +4,7 @@ import 'salad.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'custom_salad.dart';
+import 'order_page.dart';
 
 class MenuPage extends StatefulWidget {
   @override
@@ -15,7 +16,7 @@ class _MenuPageState extends State<MenuPage> {
 
   Future<void> fetchMenus() async {
     final response = await http.get(Uri.parse(
-        'http://localhost:3000/menu')); // Replace with your actual API endpoint
+        'http://192.168.159.5:3000/menu')); // Replace with your actual API endpoint
     if (response.statusCode == 200) {
       final List menus = jsonDecode(response.body);
       setState(() {
@@ -32,36 +33,10 @@ class _MenuPageState extends State<MenuPage> {
     }
   }
 
-    @override
+  @override
   void initState() {
     super.initState();
     fetchMenus();
-  }
-
-  Future<void> sendOrder() async {
-    final items = salads.map((salad) => {
-      'item': salad.name,
-      'quantity': salad.quantity,
-      // 'price': salad.price,  // 불필요
-      'ingredients': salad.ingredients,  // Adding ingredients field
-    }).toList();
-
-    final order = {
-      'name': 'Your Name',  // Replace 'Your Name' with the actual order name
-      'items': items,
-    };
-
-    final response = await http.post(
-      Uri.parse('http://localhost:3000/order'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(order),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      print('Order sent successfully');
-    } else {
-      print('Failed to send order');
-    }
   }
 
   void handleQuantityChanged(int index, int quantity) {
@@ -83,11 +58,18 @@ class _MenuPageState extends State<MenuPage> {
             return CustomSaladItem(salad: salads[index]);
           } else {
             return ListTile(
-              leading: Image.network(salads[index].image),
+              leading: Image.network(
+                salads[index].image,
+                // Fix the image URL
+                width: 50, // Set a fixed width for the image
+                height: 50, // Set a fixed height for the image
+                fit: BoxFit.cover, // This could help to prevent overflow
+              ),
               title: Text(salads[index].name),
               subtitle: Text('\$${salads[index].price.toStringAsFixed(2)}'),
               trailing: Container(
-                width: 100, // Set the desired width
+                width: 80,
+                // Reduce the width of the trailing widget to prevent overflow
                 child: QuantityButton(
                   salad: salads[index],
                   onQuantityChanged: (int quantity) {
@@ -100,9 +82,14 @@ class _MenuPageState extends State<MenuPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: sendOrder,
-        tooltip: 'Send Order',
-        child: Icon(Icons.send),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => OrderPage(salads: salads)),
+          );
+        },
+        tooltip: 'Checkout',
+        child: Icon(Icons.check),
       ),
     );
   }

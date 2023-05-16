@@ -1,105 +1,73 @@
+// order_page.dart
 import 'package:flutter/material.dart';
+import 'salad.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class Order {
-  final String name;
-  final List<Map<String, dynamic>> items;
+class OrderPage extends StatefulWidget {
+  final List<Salad> salads;
 
-  Order({required this.name, required this.items});
+  OrderPage({Key? key, required this.salads}) : super(key: key);
 
-  factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      name: json['name'],
-      items: List<Map<String, dynamic>>.from(json['items']),
+  @override
+  _OrderPageState createState() => _OrderPageState();
+
+}
+
+class _OrderPageState extends State<OrderPage> {
+  Future<void> sendOrder() async {
+    final items = widget.salads
+        .where((salad) => salad.quantity > 0)
+        .map((salad) => {
+      'item': salad.name,
+      'quantity': salad.quantity,
+      'ingredients': salad.ingredients,
+    }).toList();
+
+    final order = {
+      'name': 'Your Name',  // Replace 'Your Name' with the actual order name
+      'items': items,
+    };
+
+    final response = await http.post(
+      Uri.parse('http://192.168.159.5:3000/order'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(order),
     );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print('Order sent successfully');
+      // Navigate back to the menu page after order is sent
+      Navigator.pop(context);
+    } else {
+      print('Failed to send order');
+    }
   }
-}
 
-Future<List<Order>> fetchOrders() async {
-  final response = await http.get(Uri.parse('http://localhost:3000/order'));
-
-  if (response.statusCode == 200) {
-    List jsonResponse = jsonDecode(response.body);
-    return jsonResponse.map((order) => Order.fromJson(order)).toList();
-  } else {
-    throw Exception('Failed to load orders');
-  }
-}
-
-class OrderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Order>>(
-      future: fetchOrders(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          return ListView.builder(
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              return Card(
-                elevation: 2.0,
-                margin: EdgeInsets.all(8.0),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        snapshot.data![index].name,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Divider(color: Colors.grey),
-                      ...snapshot.data![index].items.map((item) => Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: ListTile(
-                          title: Text(
-                            '${item['item']}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Quantity: ${item['quantity'].toString()}',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              Wrap(
-                                spacing: 6.0,
-                                runSpacing: 6.0,
-                                children: List<Widget>.generate(
-                                    item['ingredients'].length, (int index) {
-                                  return Chip(
-                                    label: Text(
-                                        item['ingredients'][index],
-                                        style: TextStyle(color: Colors.white)),
-                                    backgroundColor: Colors.green,
-                                  );
-                                }),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        } else if (snapshot.hasError) {
-          return Text('${snapshot.error}');
-        }
+    List<Salad> orderedSalads = widget.salads.where((salad) => salad.quantity > 0).toList();
 
-        // By default, show a loading spinner.
-        return CircularProgressIndicator();
-      },
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Order'),
+      ),
+      body: ListView.builder(
+        itemCount: orderedSalads.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            leading: Image.network(orderedSalads[index].image),
+            title: Text(orderedSalads[index].name),
+            subtitle: Text('\$${orderedSalads[index].price.toStringAsFixed(2)} x ${orderedSalads[index].quantity}'),
+            trailing: Text('\$${(orderedSalads[index].price * orderedSalads[index].quantity).toStringAsFixed(2)}'),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: sendOrder,
+        tooltip: 'Send Order',
+        child: Icon(Icons.send),
+      ),
     );
   }
 }

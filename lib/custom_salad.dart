@@ -23,11 +23,17 @@ class _CustomSaladItemState extends State<CustomSaladItem> {
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
-      leading: Image.asset(widget.salad.image),
+      leading: Image.network(
+        widget.salad.image,
+        // Fix the image URL
+        width: 50, // Set a fixed width for the image
+        height: 50, // Set a fixed height for the image
+        fit: BoxFit.cover, // This could help to prevent overflow
+      ),
       title: Text(widget.salad.name),
       subtitle: Text('\$${widget.salad.price.toStringAsFixed(2)}'),
       trailing: Container(
-        width: 100,
+        width: 80,
         child: QuantityButton(
           salad: widget.salad,
           onQuantityChanged: handleQuantityChanged,

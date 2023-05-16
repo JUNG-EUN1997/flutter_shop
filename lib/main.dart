@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'menu_page.dart';
-import 'order_page.dart';
+import 'order_list.dart';
 
 void main() {
   runApp(SaladOrderApp());
@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   static List<Widget> _widgetOptions = <Widget>[
     MenuPage(),
-    OrderPage(),
+    OrderList(),
     Text('Profile Page'),  // You may want to replace this with your own widget for Profile
   ];
 
